@@ -21,46 +21,56 @@ const SPREADSHEET_ID = process.env.GOOGLE_SHEET_ID;
 
 export async function addExpense(expense: Expense) {
   try {
+    // Convert amount to positive or negative based on type
+    const amount = expense.type === 'income' ? Math.abs(expense.amount) : -Math.abs(expense.amount);
+
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Expenses!A:F',
+      range: 'Expenses!A:G', // Update the range to include the type column (G)
       valueInputOption: 'USER_ENTERED',
       requestBody: {
         values: [
           [
-            expense.id,
-            expense.date,
-            expense.amount,
-            expense.category.name,
-            expense.description,
-            expense.currency,
+            expense.id, // Column A: ID
+            expense.date, // Column B: Date
+            amount, // Column C: Amount (positive for income, negative for expense)
+            expense.category.name, // Column D: Category
+            expense.description, // Column E: Description
+            expense.currency, // Column F: Currency
+            expense.type, // Column G: Type (income/expense)
           ],
         ],
       },
     });
+
     return { success: true };
   } catch (error) {
     console.error('Error adding expense:', error);
     return { success: false, error };
   }
 }
+  
 
 export async function getExpenses(): Promise<Expense[]> {
   try {
     const response = await sheets.spreadsheets.values.get({
       spreadsheetId: SPREADSHEET_ID,
-      range: 'Expenses!A:F',
+      range: 'Expenses!A:G',
     });
 
     const rows = response.data.values || [];
-    return rows.slice(1).map((row: any[]) => ({
-      id: row[0],
-      date: row[1],
-      amount: parseFloat(row[2]),
-      category: { id: row[3], name: row[3], icon: getCategoryIcon(row[3]) },
-      description: row[4],
-      currency: row[5],
-    }));
+    return rows.slice(1).map((row: any[]) => {
+      console.log('Row:', row); // Log each row for debugging
+      return {
+        id: row[0], // Ensure this is unique
+        date: row[1],
+        amount: parseFloat(row[2]),
+        category: { id: row[3], name: row[3], icon: getCategoryIcon(row[3]) },
+        description: row[4],
+        currency: row[5],
+        type: row[6],
+      };
+    });
   } catch (error) {
     console.error('Error fetching expenses:', error);
     return [];

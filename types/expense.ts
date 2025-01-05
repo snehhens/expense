@@ -11,6 +11,7 @@ export type ExpenseCategory = {
     description: string;
     date: string;
     currency: string;
+    type: 'income' | 'expense'; // Add this field
   }
   
   
